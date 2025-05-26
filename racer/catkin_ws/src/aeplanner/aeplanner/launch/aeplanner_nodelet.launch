@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="nodelet_mode" default="standalone"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg name)_aeplanner_nodelet_manager"  args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg name)_AEPlannerNodelet" args="$(arg nodelet_mode) aeplanner/AEPlannerNodelet aeplanner_nodelet_manager" output="screen" >
+    <remap from="octomap" to="/octomap_merger/merged_map"/>
+    <remap from="/pose" to="/$(arg name)/pose"/>
+  </node>
+</launch>

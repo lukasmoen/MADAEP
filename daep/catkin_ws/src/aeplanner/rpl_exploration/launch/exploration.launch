@@ -1,0 +1,753 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <arg name="sdf_map/box_min_x" default="-35" />
+  <arg name="sdf_map/box_min_y" default="-30" />
+  <arg name="sdf_map/box_min_z" default="0" /> 
+  <arg name="sdf_map/box_max_x" default="40" />
+  <arg name="sdf_map/box_max_y" default="30" />
+  <arg name="sdf_map/box_max_z" default="5" />
+
+  <!-- Map size causes issues for some reason, so for now hardcoded -->
+  <arg name="map_size_x" default="80"/>
+  <arg name="map_size_y" default="60"/>
+  <arg name="map_size_z" default="5"/>
+
+  <!-- Global odom prefix -->
+  <arg name="odom_prefix" value="/state_ukf/odom" />
+  <arg name="drone_num" default="8" />
+  <param name="drone_num" value="$(arg drone_num)"/>
+
+  <arg name="spawn_pos1_x" default="-30" />
+  <arg name="spawn_pos1_y" default="-10" />
+  <arg name="spawn_pos1_z" default="1" />
+
+  <arg name="spawn_pos3_x" default="15" />
+  <arg name="spawn_pos3_y" default="18" />
+  <arg name="spawn_pos3_z" default="3" />
+
+  <arg name="spawn_pos2_x" default="20" />
+  <arg name="spawn_pos2_y" default="-6" />
+  <arg name="spawn_pos2_z" default="4" />
+
+  <arg name="spawn_pos4_x" default="0" />
+  <arg name="spawn_pos4_y" default="0" />
+  <arg name="spawn_pos4_z" default="3" />
+
+  <arg name="spawn_pos5_x" default="-14" />
+  <arg name="spawn_pos5_y" default="12" />
+  <arg name="spawn_pos5_z" default="1" />
+
+  <arg name="spawn_pos6_x" default="-10" />
+  <arg name="spawn_pos6_y" default="-22" />
+  <arg name="spawn_pos6_z" default="1" />
+
+  <arg name="spawn_pos7_x" default="-0.5" />
+  <arg name="spawn_pos7_y" default="-23" />
+  <arg name="spawn_pos7_z" default="3" />
+
+  <arg name="spawn_pos8_x" default="20" />
+  <arg name="spawn_pos8_y" default="-16.9" />
+  <arg name="spawn_pos8_z" default="3" />
+
+  <arg name="name1" default="drone1"/>
+  <arg name="name2" default="drone2"/>
+  <arg name="name3" default="drone3"/>
+  <arg name="name4" default="drone4"/>
+  <arg name="name5" default="drone5"/>
+  <arg name="name6" default="drone6"/>
+  <arg name="name7" default="drone7"/>
+  <arg name="name8" default="drone8"/>
+
+  <arg name="config_file" default="cafe_exploration.yaml" />
+
+  <arg name="param_file" default="$(find rpl_exploration)/config/$(arg config_file)" />
+
+  <!-- Map generation -->
+  <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/office.pcd">    
+  </node> -->
+  <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation_all.launch">
+    <arg name="drone_num" value="$(arg drone_num)"/>
+  </include>
+
+
+  <!-- DRONE 1 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 1)">
+    <arg name="drone_id" value="1"/>
+    <arg name="init_x"   value="$(arg spawn_pos1_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos1_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos1_z)"/> 
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)" />
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)" />
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)" /> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)" />
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)" />
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)" />
+
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+
+    <arg name="ns" default="drone1"/>
+
+  </include>
+   
+  <!-- DAEP  -->
+  <group ns="drone1" if="$(eval arg('drone_num') >= 1)">
+    <rosparam command="load" file="$(arg param_file)" />
+
+    <!-- <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="octomap_topic" value="/drone1/octomap_full"/>
+      <arg name="id" value="1"/>
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="id" value="1"/>
+    </include>
+
+    <node name="collision_detection_node1" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone1" />
+      <param name="id" value="1" />
+      <remap from="/write_log" to="/drone1/write_log"/>
+      <remap from="/clock_start" to="/drone1/clock_start"/>
+    </node>
+
+    <node name="$(arg name1)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name1)/pose"/>
+      <remap from="/switch_to_global" to="/$(arg name1)/switch_to_global"/>
+      <remap from="/new_goal" to="/$(arg name1)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name1)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name1)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner1/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_1" to="/sdf_map/occupancy_all_1"/>
+      <remap from="/aeplanner_init" to="/aeplanner_init_1"/>
+
+    </node>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="id" value="1"/>
+      <arg name="octomap_topic" value="/drone1/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone1"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="id" value="1"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone1"/>
+    </include> -->
+    
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="octomap_topic" value="/drone1/octomap_full"/>
+      <arg name="id" value="1"/>
+
+    </include>
+    
+  </group>
+
+  <!-- DRONE 2 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 2)">
+    <arg name="drone_id" value="2"/>
+    <arg name="init_x"   value="$(arg spawn_pos2_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos2_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos2_z)"/> 
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)"/>
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)"/>
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)"/> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)"/>
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)"/>
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)"/>
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+    <arg name="ns" default="drone2"/>
+
+  </include>
+
+   <group ns="drone2" if="$(eval arg('drone_num') >= 2)">
+    <rosparam command="load" file="$(arg param_file)" />
+
+    <!-- <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone2"/>
+      <arg name="octomap_topic" value="/drone2/octomap_full"/>
+      <arg name="id" value="2"/>
+
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone2"/>
+      <arg name="id" value="2"/>
+    </include>
+
+    <node name="collision_detection_node2" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone2" />
+      <param name="id" value="2" />
+      <remap from="/write_log" to="/drone2/write_log"/>
+      <remap from="/clock_start" to="/drone2/clock_start"/>
+    </node>
+
+       <node name="$(arg name2)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name2)/pose"/>
+      <remap from="/new_goal" to="/$(arg name2)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name2)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name2)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner2/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_1" to="/sdf_map/occupancy_all_2"/>
+
+    </node>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone2"/>
+      <arg name="id" value="2"/>
+
+      <arg name="octomap_topic" value="/drone2/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone2"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone2"/>
+      <arg name="id" value="2"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone2"/>
+    </include> -->
+    
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone2"/>
+      <arg name="octomap_topic" value="/drone2/octomap_full"/>
+      <arg name="id" value="2"/>
+
+    </include>
+
+  </group>
+
+  <!-- DRONE 3 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 3)">
+    <arg name="drone_id" value="3"/>
+    <arg name="init_x"   value="$(arg spawn_pos3_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos3_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos3_z)"/> 
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)"/>
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)"/>
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)"/> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)"/>
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)"/>
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)"/>
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+    <arg name="ns" default="drone3"/>
+
+  </include>
+
+   <group ns="drone3" if="$(eval arg('drone_num') >= 3)">
+    <rosparam command="load" file="$(arg param_file)" />
+
+   
+
+    <!-- <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone3"/>
+      <arg name="octomap_topic" value="/drone3/octomap_full"/>
+      <arg name="id" value="3"/>
+
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone3"/>
+      <arg name="id" value="3"/>
+    </include>
+
+    <node name="collision_detection_node3" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone3" />
+      <param name="id" value="3" />
+      <remap from="/write_log" to="/drone3/write_log"/>
+      <remap from="/clock_start" to="/drone3/clock_start"/>
+    </node>
+
+    <node name="$(arg name3)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name3)/pose"/>
+      <remap from="/new_goal" to="/$(arg name3)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name3)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name3)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner3/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_1" to="/sdf_map/occupancy_all_3"/>
+
+    </node>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone3"/>
+      <arg name="id" value="2"/>
+
+      <arg name="octomap_topic" value="/drone3/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone3"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone3"/>
+      <arg name="id" value="3"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone3"/>
+    </include> -->
+    
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone3"/>
+      <arg name="octomap_topic" value="/drone3/octomap_full"/>
+      <arg name="id" value="3"/>
+
+    </include>
+
+
+  </group>
+
+  <!-- DRONE 4 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 4)">
+    <arg name="drone_id" value="4"/>
+    <arg name="init_x"   value="$(arg spawn_pos4_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos4_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos4_z)"/>
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)"/>
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)"/>
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)"/> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)"/>
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)"/>
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)"/>
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+    <arg name="ns" default="drone4"/>
+
+  </include>  
+
+   <group ns="drone4" if="$(eval arg('drone_num') >= 4)">
+    <rosparam command="load" file="$(arg param_file)" />
+<!-- 
+    <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone4"/>
+      <arg name="octomap_topic" value="/drone4/octomap_full"/>
+      <arg name="id" value="4"/>
+
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone4"/>
+      <arg name="id" value="4"/>
+    </include>
+
+    <node name="collision_detection_node4" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone4" />
+      <param name="id" value="4" />
+      <remap from="/write_log" to="/drone4/write_log"/>
+      <remap from="/clock_start" to="/drone4/clock_start"/>
+    </node>
+
+  <node name="$(arg name4)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name4)/pose"/>
+      <remap from="/new_goal" to="/$(arg name4)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name4)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name4)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner4/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_1" to="/sdf_map/occupancy_all_4"/>
+
+    </node>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone4"/>
+      <arg name="id" value="2"/>
+
+      <arg name="octomap_topic" value="/drone4/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone4"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone4"/>
+      <arg name="id" value="4"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone4"/>
+    </include> -->
+    
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone4"/>
+      <arg name="octomap_topic" value="/drone4/octomap_full"/>
+      <arg name="id" value="4"/>
+
+    </include>
+
+  </group>
+
+  <!-- DRONE 5 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 5)">
+    <arg name="drone_id" value="5"/>
+    <arg name="init_x"   value="$(arg spawn_pos5_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos5_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos5_z)"/> 
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)" />
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)" />
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)" /> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)" />
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)" />
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)" />
+
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+
+    <arg name="ns" default="drone5"/>
+
+  </include>
+   
+  <!-- DAEP  -->
+  <group ns="drone5" if="$(eval arg('drone_num') >= 5)">
+    <rosparam command="load" file="$(arg param_file)" />
+
+    <!-- <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="octomap_topic" value="/drone1/octomap_full"/>
+      <arg name="id" value="1"/>
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone5"/>
+      <arg name="id" value="5"/>
+    </include>
+
+    <node name="collision_detection_node5" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone5" />
+      <param name="id" value="5" />
+      <remap from="/write_log" to="/drone5/write_log"/>
+      <remap from="/clock_start" to="/drone5/clock_start"/>
+    </node>
+
+    <node name="$(arg name5)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name5)/pose"/>
+      <remap from="/switch_to_global" to="/$(arg name5)/switch_to_global"/>
+      <remap from="/new_goal" to="/$(arg name5)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name5)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name5)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner5/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_5" to="/sdf_map/occupancy_all_5"/>
+      <remap from="/aeplanner_init" to="/aeplanner_init_5"/>
+    </node>
+
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone5"/>
+      <arg name="octomap_topic" value="/drone5/octomap_full"/>
+      <arg name="id" value="5"/>
+    </include>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone5"/>
+      <arg name="id" value="5"/>
+      <arg name="octomap_topic" value="/drone5/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone5"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone5"/>
+      <arg name="id" value="5"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone1"/>
+    </include> -->
+  </group>
+
+   <!-- DRONE 6 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 6)">
+    <arg name="drone_id" value="6"/>
+    <arg name="init_x"   value="$(arg spawn_pos6_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos6_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos6_z)"/> 
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)" />
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)" />
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)" /> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)" />
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)" />
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)" />
+
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+
+    <arg name="ns" default="drone6"/>
+
+  </include>
+   
+  <!-- DAEP  -->
+  <group ns="drone6" if="$(eval arg('drone_num') >= 6)">
+    <rosparam command="load" file="$(arg param_file)" />
+
+    <!-- <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="octomap_topic" value="/drone1/octomap_full"/>
+      <arg name="id" value="1"/>
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone6"/>
+      <arg name="id" value="6"/>
+    </include>
+
+    <node name="collision_detection_node6" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone6" />
+      <param name="id" value="6" />
+      <remap from="/write_log" to="/drone6/write_log"/>
+      <remap from="/clock_start" to="/drone6/clock_start"/>
+    </node>
+
+    <node name="$(arg name6)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name6)/pose"/>
+      <remap from="/switch_to_global" to="/$(arg name6)/switch_to_global"/>
+      <remap from="/new_goal" to="/$(arg name6)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name6)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name6)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner6/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_6" to="/sdf_map/occupancy_all_6"/>
+      <remap from="/aeplanner_init" to="/aeplanner_init_6"/>
+    </node>
+
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone6"/>
+      <arg name="octomap_topic" value="/drone6/octomap_full"/>
+      <arg name="id" value="6"/>
+    </include>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone6"/>
+      <arg name="id" value="6"/>
+      <arg name="octomap_topic" value="/drone6/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone6"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone6"/>
+      <arg name="id" value="6"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone1"/>
+    </include> -->
+  </group>
+
+   <!-- DRONE 7 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 7)">
+    <arg name="drone_id" value="7"/>
+    <arg name="init_x"   value="$(arg spawn_pos7_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos7_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos7_z)"/> 
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)" />
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)" />
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)" /> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)" />
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)" />
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)" />
+
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+
+    <arg name="ns" default="drone7"/>
+
+  </include>
+   
+  <!-- DAEP  -->
+  <group ns="drone7" if="$(eval arg('drone_num') >= 7)">
+    <rosparam command="load" file="$(arg param_file)" />
+
+    <!-- <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="octomap_topic" value="/drone1/octomap_full"/>
+      <arg name="id" value="1"/>
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone7"/>
+      <arg name="id" value="7"/>
+    </include>
+
+    <node name="collision_detection_node7" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone7" />
+      <param name="id" value="7" />
+      <remap from="/write_log" to="/drone7/write_log"/>
+      <remap from="/clock_start" to="/drone7/clock_start"/>
+    </node>
+
+    <node name="$(arg name7)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name7)/pose"/>
+      <remap from="/switch_to_global" to="/$(arg name7)/switch_to_global"/>
+      <remap from="/new_goal" to="/$(arg name7)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name7)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name7)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner7/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_7" to="/sdf_map/occupancy_all_7"/>
+      <remap from="/aeplanner_init" to="/aeplanner_init_7"/>
+    </node>
+
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone7"/>
+      <arg name="octomap_topic" value="/drone7/octomap_full"/>
+      <arg name="id" value="7"/>
+    </include>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone7"/>
+      <arg name="id" value="7"/>
+      <arg name="octomap_topic" value="/drone7/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone7"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone7"/>
+      <arg name="id" value="7"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone1"/>
+    </include> -->
+  </group>
+
+   <!-- DRONE 8 -->
+  <include file="$(find exploration_manager)/launch/single_drone_exploration.xml" if="$(eval arg('drone_num') >= 8)">
+    <arg name="drone_id" value="8"/>
+    <arg name="init_x"   value="$(arg spawn_pos8_x)"/>
+    <arg name="init_y"   value="$(arg spawn_pos8_y)"/>
+    <arg name="init_z"   value="$(arg spawn_pos8_z)"/> 
+    <arg name="map_size_x" value="$(arg map_size_x)"/>
+    <arg name="map_size_y" value="$(arg map_size_y)"/>
+    <arg name="map_size_z" value="$(arg map_size_z)"/>
+
+    <arg name="sdf_map/box_min_x" value="$(arg sdf_map/box_min_x)" />
+    <arg name="sdf_map/box_min_y" value="$(arg sdf_map/box_min_y)" />
+    <arg name="sdf_map/box_min_z" value="$(arg sdf_map/box_min_z)" /> 
+    <arg name="sdf_map/box_max_x" value="$(arg sdf_map/box_max_x)" />
+    <arg name="sdf_map/box_max_y" value="$(arg sdf_map/box_max_y)" />
+    <arg name="sdf_map/box_max_z" value="$(arg sdf_map/box_max_z)" />
+
+    <arg name="odom_prefix" value="$(arg odom_prefix)"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+    <arg name="simulation" default="true"/>
+
+    <arg name="ns" default="drone8"/>
+
+  </include>
+   
+  <!-- DAEP  -->
+  <group ns="drone8" if="$(eval arg('drone_num') >= 8)">
+    <rosparam command="load" file="$(arg param_file)" />
+
+    <!-- <include file="$(find aeplanner_evaluation)/launch/coverage_evaluation.launch">
+      <arg name="name" value="drone1"/>
+      <arg name="octomap_topic" value="/drone1/octomap_full"/>
+      <arg name="id" value="1"/>
+    </include> -->
+
+    <include file="$(find aeplanner_evaluation)/launch/logger.launch">
+      <arg name="name" value="drone8"/>
+      <arg name="id" value="8"/>
+    </include>
+
+    <node name="collision_detection_node8" pkg="drone_gazebo" type="collisions.py" output="screen">
+      <param name="name" value="drone8" />
+      <param name="id" value="8" />
+      <remap from="/write_log" to="/drone8/write_log"/>
+      <remap from="/clock_start" to="/drone8/clock_start"/>
+    </node>
+
+    <node name="$(arg name8)_rpl_exploration" pkg="rpl_exploration" type="rpl_exploration" output="screen">
+      <remap from="/pose" to="/$(arg name8)/pose"/>
+      <remap from="/switch_to_global" to="/$(arg name8)/switch_to_global"/>
+      <remap from="/new_goal" to="/$(arg name8)/new_goal"/>
+      <remap from="/goal_reached" to="/$(arg name8)/goal_reached"/>
+      <remap from="/avoidance" to="/$(arg name8)/avoidance"/>
+      <remap from="/aeplanner/get_coverage" to="/aeplanner8/get_coverage"/>
+      <remap from="/sdf_map/occupancy_all_8" to="/sdf_map/occupancy_all_8"/>
+      <remap from="/aeplanner_init" to="/aeplanner_init_8"/>
+    </node>
+
+    <include file="$(find rrtplanner)/launch/rrtplanner.launch">
+      <arg name="name" value="drone8"/>
+      <arg name="octomap_topic" value="/drone8/octomap_full"/>
+      <arg name="id" value="8"/>
+    </include>
+
+    <include file="$(find aeplanner)/launch/aeplanner_nodelet.launch">
+      <arg name="name" value="drone8"/>
+      <arg name="id" value="8"/>
+      <arg name="octomap_topic" value="/drone8/octomap_full"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/pig.launch">
+      <arg name="name" value="drone8"/>
+    </include>
+    
+    <include file="$(find pigain)/launch/dfm.launch">
+      <arg name="name" value="drone8"/>
+      <arg name="id" value="8"/>
+    </include>
+    
+    <!-- <include file="$(find rpl_exploration)/launch/octomap_server.launch">
+      <arg name="name" value="drone1"/>
+    </include> -->
+  </group>
+  <include file="$(find aeplanner_evaluation)/launch/logger_merged.launch">
+    <arg name="id" value="0"/>
+    <arg name="drone_num" value="$(arg drone_num)"/>
+  </include>
+
+</launch>

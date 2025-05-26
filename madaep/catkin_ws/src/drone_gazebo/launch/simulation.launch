@@ -1,0 +1,516 @@
+<launch>
+    <!-- Parameters Simulation and World -->
+    <arg name="rviz_config" default="$(find drone_gazebo)/daep.rviz" />
+    <arg name="mode" default="static" />
+    <arg name="world" default="cafe" />
+    <arg name="world_launch" default="$(find drone_gazebo)/launch/$(arg world)_$(arg mode).launch" />
+    
+    <!-- Parameters drones -->
+    <!-- drone 1 -->
+    <arg name="spawn_pos1" default="(0,0,0.2)" />
+    <arg name="name1" default="drone1" />
+    <!-- drone 2 -->
+    <arg name="spawn_pos2" default="(1,0,0.2)" />
+    <arg name="name2" default="drone2" />
+    <!-- drone 3 -->
+    <arg name="spawn_pos3" default="(0,1,0.2)" />
+    <arg name="name3" default="drone3" />
+    <!-- drone 4 -->
+    <arg name="spawn_pos4" default="(1,1,0.2)" />
+    <arg name="name4" default="drone4" />
+    <!-- drone 5 -->
+    <arg name="spawn_pos5" default="(-1,0,0.2)" />
+    <arg name="name5" default="drone5" />
+    <!-- drone 6 -->
+    <arg name="spawn_pos6" default="(0,-1,0.2)" />
+    <arg name="name6" default="drone6" />
+    <!-- drone 7 -->
+    <arg name="spawn_pos7" default="(-1,-1,0.2)" />
+    <arg name="name7" default="drone7" />
+    <!-- drone 8 -->
+    <arg name="spawn_pos8" default="(1,-1,0.2)" />
+    <arg name="name8" default="drone8" />
+
+    <arg name="drone_num" default="4"/>
+    <arg name="num_obstacles" default="00"/>
+
+    <!-- Human avoidance -->
+    <arg name="avoidance" default="false" />
+    <!-- Drone avoidance -->
+    <arg name="avoidance_mode" default="true" />
+
+     <!-- Load world and Gazebo -->
+    <include file="$(arg world_launch)">
+      <arg name="avoidance" value="$(arg avoidance)"/>
+    </include>
+
+    <!--Set the correct config file-->
+    <arg name="config_file" default="$(arg world)_exploration.yaml" />
+    <arg name="param_file" default="$(find rpl_exploration)/config/$(arg config_file)" />
+    <rosparam command="load" file="$(arg param_file)" />
+
+    <!-- voronoi graph  -->
+    <!-- <node name="voronoi_graph" pkg="drone_gazebo" type="voronoi.py" output="screen"/> -->
+
+    <!-- Map generation -->
+    <!-- <node pkg ="map_generator" name ="map_pub" type ="map_pub" output = "screen" args="$(find map_generator)/resource/pillar.pcd">    
+    </node> -->
+
+      <!-- extra dynamic obstacles -->
+    <node name="extra_obstacles" pkg="drone_gazebo" type="extra_obstacles.py" output="screen">
+      <param name="num_obstacles" value="$(arg num_obstacles)"/>
+    </node>
+    <!-- ..................................................................................................... -->
+    <!-- DRONE 1-->
+    <group if="$(eval arg('drone_num') >= 1)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone1" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos1)" />
+        <param name="name" value="$(arg name1)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate1" output="screen">
+          <remap from="/goal" to="/aeplanner1/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name1)" />
+          <remap from="/goal_vector" to="/$(arg name1)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name1)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name1)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name1)/avoidance" />
+      </node> -->
+
+       <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check1" output="screen" >
+        <param name="id" value="1"/>
+      </node>
+
+      <!-- Transform Broadcaster -->
+      <node name="tfbc1" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone1/tf"/>
+        <param name="name" value="$(arg name1)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone1_odom" pkg="topic_tools" type="relay" args="/drone1/odom /tfbc1/drone1/odom" />
+
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node1" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name1)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <!-- <node name="tf1_relay" pkg="topic_tools" type="relay" args="/drone1/tf /tf" output="screen"/> -->
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node1" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name1)" />
+        <param name="id" value="1" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node1" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="1" />
+        <param name="spawn_pos" value="$(arg spawn_pos1)" />
+      </node>
+
+    </group>
+    <!-- ..................................................................................................... -->
+    <!-- DRONE 2 -->
+    <group if="$(eval arg('drone_num') >= 2)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone2" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos2)" />
+        <param name="name" value="$(arg name2)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate2" output="screen">
+          <remap from="/goal" to="/aeplanner2/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name2)" />
+          <remap from="/goal_vector" to="/$(arg name2)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name2)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name2)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name2)/avoidance" />
+      </node> -->
+
+     <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check2" output="screen" >
+        <param name="id" value="2"/>
+      </node>
+
+      <!-- Transform Broadcaster -->
+      <node name="tfbc2" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone2/tf"/>
+        <param name="name" value="$(arg name2)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone2_odom" pkg="topic_tools" type="relay" args="/drone2/odom /tfbc2/drone2/odom" />
+      
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node2" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name2)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <node name="tf2_relay" pkg="topic_tools" type="relay" args="/drone2/tf /tf" output="screen"/>
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node2" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name2)" />
+        <param name="id" value="2" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node2" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="2" />
+        <param name="spawn_pos" value="$(arg spawn_pos2)" />
+      </node>
+
+    </group>
+    <!-- ..................................................................................................... -->
+    <!-- DRONE 3 -->
+    <group if="$(eval arg('drone_num') >= 3)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone3" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos3)" />
+        <param name="name" value="$(arg name3)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate3" output="screen">
+          <remap from="/goal" to="/aeplanner3/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name3)" />
+          <remap from="/goal_vector" to="/$(arg name3)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name3)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name3)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name3)/avoidance" />
+      </node> -->
+
+      <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check3" output="screen" >
+        <param name="id" value="3"/>
+      </node>
+
+      <!-- Transform Broadcaster -->
+      <node name="tfbc3" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone3/tf"/>
+        <param name="name" value="$(arg name3)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone3_odom" pkg="topic_tools" type="relay" args="/drone3/odom /tfbc3/drone3/odom" />
+
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node3" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name3)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <node name="tf3_relay" pkg="topic_tools" type="relay" args="/drone3/tf /tf" output="screen"/>
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node3" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name3)" />
+        <param name="id" value="3" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node3" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="3" />
+        <param name="spawn_pos" value="$(arg spawn_pos3)" />
+      </node>
+
+    </group>
+    <!-- ..................................................................................................... -->
+    <!-- DRONE 4 -->
+    <group if="$(eval arg('drone_num') >= 4)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone4" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos4)" />
+        <param name="name" value="$(arg name4)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate4" output="screen">
+          <remap from="/goal" to="/aeplanner4/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name4)" />
+          <remap from="/goal_vector" to="/$(arg name4)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name4)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name4)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name4)/avoidance" />
+      </node> -->
+
+      <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check4" output="screen" >
+        <param name="id" value="4"/>
+      </node>
+
+      <!-- Transform Broadcaster -->
+      <node name="tfbc4" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone4/tf"/>
+        <param name="name" value="$(arg name4)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone4_odom" pkg="topic_tools" type="relay" args="/drone4/odom /tfbc4/drone4/odom" />
+
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node4" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name4)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <node name="tf4_relay" pkg="topic_tools" type="relay" args="/drone4/tf /tf" output="screen"/>
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node4" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name4)" />
+        <param name="id" value="4" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node4" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="4" />
+        <param name="spawn_pos" value="$(arg spawn_pos4)" />
+      </node>
+    </group>
+    <!-- ..................................................................................................... -->
+    <!-- DRONE 5 -->
+    <group if="$(eval arg('drone_num') >= 5)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone5" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos5)" />
+        <param name="name" value="$(arg name5)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate5" output="screen">
+          <remap from="/goal" to="/aeplanner5/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name5)" />
+          <remap from="/goal_vector" to="/$(arg name5)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name5)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name5)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name5)/avoidance" />
+      </node> -->
+
+      <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check5" output="screen" >
+        <param name="id" value="5"/>
+      </node>
+
+      <!-- Transform Broadcaster -->
+      <node name="tfbc5" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone5/tf"/>
+        <param name="name" value="$(arg name5)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone5_odom" pkg="topic_tools" type="relay" args="/drone5/odom /tfbc5/drone5/odom" />
+
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node5" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name5)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <node name="tf5_relay" pkg="topic_tools" type="relay" args="/drone5/tf /tf" output="screen"/>
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node4" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name4)" />
+        <param name="id" value="4" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node5" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="5" />
+        <param name="spawn_pos" value="$(arg spawn_pos5)" />
+      </node>
+    </group>
+ <!-- ..................................................................................................... -->
+
+ <!-- DRONE 6 -->
+    <group if="$(eval arg('drone_num') >= 6)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone6" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos6)" />
+        <param name="name" value="$(arg name6)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate6" output="screen">
+          <remap from="/goal" to="/aeplanner6/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name6)" />
+          <remap from="/goal_vector" to="/$(arg name6)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name6)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name6)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name6)/avoidance" />
+      </node> -->
+
+      <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check6" output="screen" >
+        <param name="id" value="6"/>
+      </node>
+      <!-- Transform Broadcaster -->
+      <node name="tfbc6" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone6/tf"/>
+        <param name="name" value="$(arg name6)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone6_odom" pkg="topic_tools" type="relay" args="/drone6/odom /tfbc6/drone6/odom" />
+
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node6" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name6)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <node name="tf6_relay" pkg="topic_tools" type="relay" args="/drone6/tf /tf" output="screen"/>
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node4" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name4)" />
+        <param name="id" value="4" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node6" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="6" />
+        <param name="spawn_pos" value="$(arg spawn_pos6)" />
+      </node>
+    </group>
+
+     <!-- ..................................................................................................... -->
+    <!-- DRONE 7 -->
+    <group if="$(eval arg('drone_num') >= 7)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone7" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos7)" />
+        <param name="name" value="$(arg name7)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate7" output="screen">
+          <remap from="/goal" to="/aeplanner7/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name7)" />
+          <remap from="/goal_vector" to="/$(arg name7)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name7)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name7)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name7)/avoidance" />
+      </node> -->
+
+      <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check7" output="screen" >
+        <param name="id" value="7"/>
+      </node>
+
+      <!-- Transform Broadcaster -->
+      <node name="tfbc7" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone7/tf"/>
+        <param name="name" value="$(arg name7)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone7_odom" pkg="topic_tools" type="relay" args="/drone7/odom /tfbc7/drone7/odom" />
+
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node7" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name7)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <node name="tf7_relay" pkg="topic_tools" type="relay" args="/drone7/tf /tf" output="screen"/>
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node4" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name4)" />
+        <param name="id" value="4" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node7" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="7" />
+        <param name="spawn_pos" value="$(arg spawn_pos7)" />
+      </node>
+    </group>
+
+     <!-- ..................................................................................................... -->
+    <!-- DRONE 8 -->
+    <group if="$(eval arg('drone_num') >= 8)">
+      <!-- Spawn drone -->
+      <node pkg="drone_gazebo" type="spawn_drone.py" name="spawn_drone8" output="screen">
+        <param name="spawn_pos" value="$(arg spawn_pos8)" />
+        <param name="name" value="$(arg name8)" />
+      </node>
+
+      <!-- Motion planning -->
+      <!-- <node pkg="drone_gazebo" type="move_and_rotate.py" name="move_and_rotate8" output="screen">
+          <remap from="/goal" to="/aeplanner8/goal" />
+          <param name="avoidance_mode" value="$(arg avoidance_mode)"/>
+          <param name="name" value="$(arg name8)" />
+          <remap from="/goal_vector" to="/$(arg name8)/goal_vector" />
+          <remap from="/goal_reached" to="/$(arg name8)/goal_reached" />
+          <remap from="/new_goal" to="/$(arg name8)/new_goal" />
+          <remap from="/avoidance" to="/$(arg name8)/avoidance" />
+      </node> -->
+
+      <node pkg="drone_gazebo" type="goal_reached_check.py" name="goal_reached_check8" output="screen" >
+        <param name="id" value="8"/>
+      </node>
+
+      <!-- Transform Broadcaster -->
+      <node name="tfbc8" pkg="drone_gazebo" type="transform_broadcaster" > 
+        <remap from="/tf" to="/drone8/tf"/>
+        <param name="name" value="$(arg name8)" />
+      </node>
+
+      <!-- Relay needed since private namespace adds prefix to topic name ??!?!?!? (in tfbc.cpp) -->
+      <node name="relay_drone8_odom" pkg="topic_tools" type="relay" args="/drone8/odom /tfbc8/drone8/odom" />
+
+      <!--Start the pose publisher -->
+      <!--Set "usePoseStamped" to 'True' for PoseStamped, or 'False' for PoseWithCovarianceStamped -->
+      <node pkg="drone_gazebo" type="pose_publisher_node.py" name="pose_publisher_node8" output="screen" >
+        <param name="usePoseStamped" type="bool" value="True" />
+        <param name="name" value="$(arg name8)" />
+      </node> 
+
+      <!-- Merge TF topics (for rviz vizualisation)-->
+      <node name="tf8_relay" pkg="topic_tools" type="relay" args="/drone8/tf /tf" output="screen"/>
+
+      <!-- Launch Python node for collision detection -->
+      <!-- <node name="collision_detection_node4" pkg="drone_gazebo" type="collisions.py" output="screen">
+        <param name="name" value="$(arg name4)" />
+        <param name="id" value="4" />
+      </node> -->
+
+      <!-- odom vis for racer -->
+      <node name="odom_vis_node8" pkg="drone_gazebo" type="odom_vis.py" output="screen">
+        <param name="id" value="8" />
+        <param name="spawn_pos" value="$(arg spawn_pos8)" />
+      </node>
+    </group>
+    <!-- ..................................................................................................... -->
+     
+    <!-- Start RViz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" >
+      <!-- Does this remapping matter? -->
+      <remap from="/goal_vector" to="/$(arg name1)/goal_vector"/>
+    </node>
+
+</launch>

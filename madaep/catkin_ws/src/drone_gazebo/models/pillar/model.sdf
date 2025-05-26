@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="pillar">
+    <static>true</static>
+    <link name="link">
+      <visual name="pillar_visual">
+        <geometry>
+          <mesh>
+            <uri>model://pillar/meshes/pillar.stl</uri>
+            <scale>1 1 1</scale> <!-- Adjust if needed -->
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="pillar_collision">
+        <geometry>
+          <mesh>
+            <uri>model://pillar/meshes/pillar.stl</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

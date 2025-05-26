@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="id" default="fetches_from_exploration.launch"/>
+  <arg name="drone_num" default="fetches_from_exploration.launch"/>
+  <node name="logger_merged" pkg="aeplanner_evaluation" type="logger_merged" output="screen">
+    <param name="id" value="$(arg id)"/>
+    <param name="drone_num" value="$(arg drone_num)"/>
+  </node>
+</launch>

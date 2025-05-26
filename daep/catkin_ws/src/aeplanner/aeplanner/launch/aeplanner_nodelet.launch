@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="nodelet_mode" default="standalone"/>
+  <arg name="id" default="1"/>
+  <arg name="octomap_topic" default="fetches_from_exploration.launch"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg name)_aeplanner_nodelet_manager"  args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg name)_AEPlannerNodelet" args="$(arg nodelet_mode) aeplanner/AEPlannerNodelet aeplanner_nodelet_manager" output="screen" >
+    <remap from="octomap" to="$(arg octomap_topic)"/>
+    <remap from="/pose" to="/$(arg name)/pose"/>
+    <remap from="/sdf_map/occupancy_all_1" to="/sdf_map/occupancy_all_$(arg id)"/>
+    <remap from="/aeplanner_init" to="/aeplanner_init_$(arg id)"/>
+    
+  </node>
+</launch>

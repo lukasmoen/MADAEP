@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="id" default="fetches_from_exploration.launch"/>
+  <arg name="octomap_topic" default="fetches_from_exploration.launch"/>
+  <node name="coverage_evaluation" pkg="aeplanner_evaluation" type="coverage_evaluation" output="screen">
+    <remap from="octomap" to="$(arg octomap_topic)"/>
+    <remap from="occupancy_all" to="/sdf_map/occupancy_all_$(arg id)"/>
+    <remap from="odom" to="/drone$(arg id)/odom"/>
+  </node>
+</launch>

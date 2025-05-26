@@ -1,0 +1,6 @@
+string drone_id
+uint32 iteration
+float64 path_length
+float64 elapsed
+float64 total_planning_time
+float64 total_fly_time

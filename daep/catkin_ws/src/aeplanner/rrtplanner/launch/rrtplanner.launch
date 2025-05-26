@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="octomap_topic" default="fetches_from_exploration.launch"/>
+  <arg name="id" default="fetches_from_exploration.launch"/>
+  <node name="$(arg name)_rrtplanner_node" pkg="rrtplanner" type="rrtplanner_node" output="screen" >
+    <remap from="octomap" to="$(arg octomap_topic)"/>
+    <remap from="/pose" to="/$(arg name)/pose"/>
+    <remap from="/drone1/odom" to="/drone$(arg id)/odom"/>
+    <remap from="/sdf_map/occupancy_all_1" to="/sdf_map/occupancy_all_$(arg id)"/>
+  </node>
+</launch>

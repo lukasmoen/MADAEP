@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="id" default="fetches_from_exploration.launch"/>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="param_file" default="$(find pigain)/config/dfm_config.yaml" />
+  <node name="$(arg name)_dfm" pkg="pigain" type="dfm.py" output="screen">
+    <rosparam command="load" file="$(arg param_file)" />
+    <remap from='/aeplanner/boundary/min' to='/aeplanner$(arg id)/boundary/min'/>
+    <remap from='/aeplanner/boundary/max' to='/aeplanner$(arg id)/boundary/max'/>
+    <remap from='/aeplanner/visualizeDFM' to='/aeplanner$(arg id)/visualizeDFM'/>
+    <remap from='/aeplanner/dfm/square_size' to='/aeplanner$(arg id)/dfm/square_size'/>
+  </node>
+</launch>

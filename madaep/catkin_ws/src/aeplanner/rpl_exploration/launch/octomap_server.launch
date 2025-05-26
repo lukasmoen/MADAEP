@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<launch>
+	<arg name="name" default="placeholder_from_merger"/>
+	<!-- <arg name="input_from_octomap_merger" default="/octomap_binary"/>
+	<arg name="topic_visualization" default="/occupied_cells_vis_array"/> -->
+
+	<node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+		<param name="resolution" value="0.2" />
+		<param name="publish_free_space" value="true" />
+		
+		<!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
+		<param name="frame_id" type="string" value="world" />
+	
+		<!-- maximum range to integrate (speedup!) -->
+		<param name="sensor_model/max_range" value="5" />
+
+		<!-- Send in binary octomap for convertion to occupied  -->
+		<!-- <remap from="/octomap_binary" to="$(arg input_from_octomap_merger)" /> -->
+
+        <!-- Publish the merged occupied cells visualization -->
+        <!-- <remap from="/occupied_cells_vis_array" to="$(arg topic_visualization)" /> -->
+
+
+		<remap from="cloud_in" to="/$(arg name)_camera_ir/$(arg name)/camera/depth/points" />
+		<remap from="/tf" to="/$(arg name)/tf" />
+		
+	</node>
+
+</launch>

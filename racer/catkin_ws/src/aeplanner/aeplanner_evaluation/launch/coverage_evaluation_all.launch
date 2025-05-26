@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="drone_num" default="fetches_from_exploration.launch"/>
+  <node name="coverage_evaluation_all" pkg="aeplanner_evaluation" type="coverage_evaluation_all" output="screen" >
+    <param name="drone_num" value="$(arg drone_num)"/>
+  </node>
+</launch>

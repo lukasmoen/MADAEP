@@ -1,0 +1,4 @@
+start-time,duration,end-time,type-of-collision
+65.567,0.069000000000000006,65.636,Agent-Human
+244.771,0.13800000000000001,244.909,Agent-Human
+228.198,0.54700000000000004,228.745,Agent-Agent

@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <node name="$(arg name)_rrtplanner_node" pkg="rrtplanner" type="rrtplanner_node" output="screen">
+    <remap from="octomap" to="/octomap_merger/merged_map"/>
+  </node>
+</launch>

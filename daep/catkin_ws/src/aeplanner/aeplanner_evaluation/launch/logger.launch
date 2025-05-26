@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="id" default="fetches_from_exploration.launch"/>
+  <node name="logger" pkg="aeplanner_evaluation" type="logger" output="screen">
+    <param name="id" value="$(arg id)"/>
+  </node>
+</launch>

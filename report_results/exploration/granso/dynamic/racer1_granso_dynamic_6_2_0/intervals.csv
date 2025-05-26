@@ -1,0 +1,14 @@
+start-time,duration,end-time,type-of-collision
+110.5,1.05,111.55,Agent-Human
+139.13,1.05,140.18,Agent-Human
+172.94,1.05,173.99,Agent-Human
+188.76,1.05,189.81,Agent-Human
+213.75,1.05,214.8,Agent-Human
+237.55,1.05,238.6,Agent-Human
+270.94,0.97999999999999998,271.92,Agent-Human
+304.75,1.05,305.8,Agent-Human
+320.57,1.05,321.62,Agent-Human
+345.56,1.05,346.61,Agent-Human
+364.67,0.97999999999999998,365.65,Agent-Human
+931.18,0.97999999999999998,932.16,Agent-Agent
+975.49,0.28000000000000003,975.77,Agent-Agent

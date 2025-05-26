@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="name" default="fetches_from_exploration.launch"/>
+  <arg name="param_file" default="$(find pigain)/config/config.yaml" />
+  <node name="$(arg name)_pig" pkg="pigain" type="pig.py" output="screen">
+    <remap from="pose" to="/$(arg name)/pose"/>
+    <rosparam command="load" file="$(arg param_file)" />
+  </node>
+</launch>
